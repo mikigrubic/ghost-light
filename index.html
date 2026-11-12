@@ -348,7 +348,7 @@ function parseScript(raw){
     out.push(it);
   }
   const chars={};
-  out.forEach(it=>{if(it.type==='line') chars[it.char]=(chars[it.char]||0)+1});
+  out.forEach(it=>{if(it.type==='line') it.char.split(/\s*&\s*/).forEach(c=>{chars[c]=(chars[c]||0)+1})});
   const scenes=[]; out.forEach((it,i)=>{if(it.type==='scene') scenes.push({i,text:it.text})});
   return {items:out,chars,scenes};
 }
@@ -397,7 +397,7 @@ const S=()=>{const c=cur();if(!c.settings)c.settings=defaults();return c.setting
 let parsed=null; let editingId=null;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function fmtLine(t){return esc(t).replace(/([\(\[][^\)\]]*[\)\]])/g,'<span class="paren">$1</span>')}
-const isMine=it=>it&&it.type==='line'&&cur().roles.includes(it.char);
+const isMine=it=>it&&it.type==='line'&&it.char.split(/\s*&\s*/).some(c=>cur().roles.includes(c));
 
 function toast(msg,ms=3200){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),ms)}
 
@@ -422,6 +422,7 @@ if('speechSynthesis' in window){loadVoices();try{speechSynthesis.addEventListene
 function voiceFor(ch){
   if(!devVoices.length) return null;
   const name=ch&&S().voices[ch]; let v=name&&devVoices.find(x=>x.name===name);
+  if(!v){const first=String(ch||'').split(/\s*&\s*/)[0];const nm=first&&S().voices[first];v=nm&&devVoices.find(x=>x.name===nm);}
   if(!v){const others=Object.keys(parsed.chars).filter(n=>!cur().roles.includes(n));const k=Math.max(0,others.indexOf(ch));v=devVoices[k%devVoices.length]}
   return v;
 }
